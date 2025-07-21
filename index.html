@@ -541,7 +541,19 @@ document.getElementById("menuBtn").addEventListener("click", () => {
   returnToMenu();
 }); 
     document.addEventListener("click", playMusic, { once:true });
-    setInterval(createBlock, 1000);
+    // Adjust block spawn rate based on canvas width
+const baseInterval = 1000; // 1 block per second on small screen
+let blockInterval = baseInterval;
+
+if (canvas.width > 800) {
+  blockInterval = 500; // 2 blocks per second
+} 
+if (canvas.width > 1200) {
+  blockInterval = 300; // 3 blocks per second
+}
+
+// Create blocks based on screen size
+setInterval(createBlock, blockInterval);
     (function loop(){
       if(gameRunning){
         movePlayers();
