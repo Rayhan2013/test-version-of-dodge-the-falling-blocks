@@ -312,7 +312,7 @@ setTimeout(() => {
       players.forEach((pl, i) => {
        pl.alive = i < numPlayers && (!isMobile || i < 2);
         if (pl.alive) {
-          pl.x = (i+1)*(canvas.width/(numPlayers+1));
+          pl.x = playArea.x + ((i + 1) * (playArea.width / (numPlayers + 1))) - (pl.w / 2);
           pl.y = canvas.height - pl.h - 20; pl.velocityY = 0; pl.lastActive = Date.now();
         }
       });
@@ -320,10 +320,10 @@ setTimeout(() => {
       canvas.style.display = "block";
       document.getElementById("message").innerText = "";
       blocks = [];
-      playArea.width = originalPlayAreaWidth;
       gameRunning = true;
       bgMusic.play();  
       document.getElementById("endScreen").style.display = "none";
+      resizeGameCanvas();
     } 
 
     // Block creation
@@ -460,7 +460,13 @@ setTimeout(() => {
     }
 
     function shrinkWalls() {
-      if (numPlayers>1) playArea.width = Math.max(200, playArea.width - 0.5);
+      if (numPlayers > 1) {
+    // Base shrink speed per frame
+    let baseShrink = 0.5;
+    let speedMultiplier = canvas.width / 500; 
+    let shrinkAmount = baseShrink * speedMultiplier;
+    playArea.width = Math.max(200, playArea.width - shrinkAmount);
+     }
     }
 
     function checkOnePlayerLeft() {
@@ -541,19 +547,40 @@ document.getElementById("menuBtn").addEventListener("click", () => {
   returnToMenu();
 }); 
     document.addEventListener("click", playMusic, { once:true });
-    // Adjust block spawn rate based on canvas width
-const baseInterval = 1000; // 1 block per second on small screen
-let blockInterval = baseInterval;
+    let blockSpawnIntervalId;
 
-if (canvas.width > 800) {
-  blockInterval = 500; // 2 blocks per second
-} 
-if (canvas.width > 1200) {
-  blockInterval = 300; // 3 blocks per second
+function setupBlockSpawnRate() {
+  if (blockSpawnIntervalId) clearInterval(blockSpawnIntervalId);
+
+  const baseInterval = 1000;
+  let blockInterval = baseInterval;
+
+  if (canvas.width > 800) {
+    blockInterval = 500;
+  } 
+  if (canvas.width > 1200) {
+    blockInterval = 300;
+  }
+
+  blockSpawnIntervalId = setInterval(createBlock, blockInterval);
 }
+    window.addEventListener("resize", resizeGameCanvas);
 
-// Create blocks based on screen size
-setInterval(createBlock, blockInterval);
+function resizeGameCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  playArea.width = canvas.width * 0.9;
+  playArea.x = (canvas.width - playArea.width) / 2;
+  setupBlockSpawnRate();
+  repositionPlayers();
+}
+    function repositionPlayers() {
+  players.forEach((pl, i) => {
+    if (pl.alive) {
+      pl.x = playArea.x + ((i + 1) * (playArea.width / (numPlayers + 1))) - (pl.w / 2);
+    }
+  });
+}
     (function loop(){
       if(gameRunning){
         movePlayers();
