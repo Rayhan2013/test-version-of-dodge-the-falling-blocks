@@ -257,7 +257,6 @@ bgMusic.src = tracks[currentTrackIndex];
 bgMusic.load();
 function playCurrentTrack() {
   bgMusic.play().catch(() => {});
-  playPauseBtn.innerText = "⏸ Pause";
 }
 
 function playNextTrack() {
@@ -268,15 +267,22 @@ function playNextTrack() {
 }
 
 bgMusic.addEventListener("ended", playNextTrack);
-  // Play / Pause toggle
-function togglePlayPause() {
+// Update the play/pause button text based on current state
+function updatePlayPauseButton() {
   if (bgMusic.paused) {
-    bgMusic.play().catch(() => {}); // Play, ignore errors
+    playPauseBtn.innerText = "▶️ Play";
+  } else {
     playPauseBtn.innerText = "⏸ Pause";
+  }
+}
+  // Play / Pause toggle
+  function togglePlayPause() {
+  if (bgMusic.paused) {
+    bgMusic.play().catch(() => {});
   } else {
     bgMusic.pause();
-    playPauseBtn.innerText = "▶️ Play";
   }
+  updatePlayPauseButton(); // update text immediately
 }
 // Volume slider
 volumeSlider.addEventListener("input", () => {
