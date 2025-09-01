@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dodge the Falling Blocks!</title>
+  <style>
+    body {
+      text-align: center;
+      background: linear-gradient(to bottom, #3498db, #9b59b6);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+  background-color: black;
+  display: none;
+  margin: 0 auto;
+  border: 5px solid white;
+  max-width: 100%;
+  height: auto;
+}
+    #menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+      z-index: 2;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      cursor: pointer;
+      background-color: white;
+      border-radius: 10px;
+    }
+    #message {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-top: 10px;
+      white-space: pre-line;
+    }
+    /* Intro */
+    #introScreen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: black;
+      position: absolute;
+      top: 0;
+      width: 100%;
+      z-index: 3;
+    }
+    #introMessage {
+      font-size: 40px;
+      font-weight: bold;
+      color: white;
+      animation: glitch 1.5s infinite;
+    }
+    @keyframes glitch {
+      0% { text-shadow: 2px 2px 0 red, -2px -2px 0 blue; }
+      20% { text-shadow: -2px -2px 0 red, 2px 2px 0 blue; }
+      40% { text-shadow: 2px 2px 0 red, -2px -2px 0 blue; }
+      60% { text-shadow: -2px -2px 0 red, 2px 2px 0 blue; }
+      80% { text-shadow: 2px 2px 0 red, -2px -2px 0 blue; }
+      100% { text-shadow: -2px -2px 0 red, 2px 2px 0 blue; }
+    }
+    /* Controls overlay */
+    #controlsOverlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      color: white;
+      z-index: 4;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #controlsOverlay h2 { margin-bottom: 20px; }
+    #controlsOverlay ul { list-style: none; padding: 0; text-align: left; }
+    #controlsOverlay li { margin: 10px 0; font-size: 20px; }
+
+```
+.musicControls {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.9);
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 9999;
+}
+.musicControls .volumeWrapper {
+  display: flex;
+  align-items: center;
+  background-color: white;  
+  padding: 5px 10px;       
+  border-radius: 10px;     
+  gap: 5px;
+  height: 35px;            
+  margin-top: 10px;        /* moves it slightly down */
+}
+.musicControls .volumeWrapper input[type="range"] {
+  width: 100px;            
+  background: transparent;  
+  cursor: pointer;
+  height: 15px;            /* slightly smaller slider track */
+}
+  #volumePercentage {
+  font-size: 12px;
+  color: black;
+  min-width: 25px;
+  text-align: right;
+}
+#playPauseBtn {
+  margin-right: 2px; /* reduces space between play/pause and toggle music */
+}
+  /* Base styles for dpad to hide them by default */
+.dpad {
+  position: fixed;
+  bottom: 20px;   /* Position at the bottom */
+  left: 50%;      /* Center horizontally */
+  transform: translateX(-50%);  /* Center D-Pad in the middle */
+  display: none;  /* Hide by default */
+  flex-direction: row;
+  gap: 10px;
+  z-index: 10;
+}
+body.mobile .dpad {
+  display: flex; /* Show D-Pad in mobile mode */
+}
+
+#dpad1 {
+  left: 20px;   /* Adjust positioning for Player 1 */
+}
+
+#dpad2 {
+  right: 20px;  /* Adjust positioning for Player 2 */
+}
+
+body.mobile #dpad1, body.mobile #dpad2 {
+  position: fixed;    
+  bottom: 20px;   /* Both D-Pads will be fixed at the bottom */
+}
+  </style>
+</head>
+<body>
+  <!-- Intro -->
+  <div id="introScreen">
+    <div id="introMessage">Made by Rayhan Sonic Studios</div>
+  </div>
+
+  <!-- Menu -->
+
+  <div id="menu" style="display: none;">
+    <h1>Dodge the Falling Blocks!</h1>
+    <button onclick="startGame(1)">Single Player</button>
+    <button onclick="startGame(2)">2 Players</button>
+    <button id="threePlayerBtn" onclick="startGame(3)">3 Players</button>
+    <button onclick="toggleControls()">Show Controls</button>
+  </div>
+ 
+  <!-- moblie restart and menu buttons -->
+  <div id="gameOverUI" style="display:none; position: fixed; top: 50%; left: 50%; 
+  transform: translate(-50%, -50%); text-align: center; color: white; z-index: 1000;">
+  <div id="gameOverText" style="margin-bottom: 20px; font-size: 24px; font-weight: bold;"></div>
+  <button id="restartBtn" style="margin: 10px; padding: 10px 20px; font-size: 18px;">Restart</button>
+  <button id="menuBtn" style="margin: 10px; padding: 10px 20px; font-size: 18px;">Menu</button>
+</div>
+  
+  <!-- Controls Overlay -->
+
+  <div id="controlsOverlay">
+    <h2>Player Controls</h2>
+    <ul>
+      <li><strong>Player 1:</strong> Left: A, Right: D, Jump: W</li>
+      <li><strong>Player 2:</strong> Left: J, Right: L, Jump: I</li>
+      <li><strong>Player 3:</strong> Left: ArrowLeft, Right: ArrowRight, Jump: ArrowUp</li>
+    </ul>
+    <button onclick="toggleControls()">Close</button>
+  </div>
+
+  <!-- Player 1 D-Pad -->
+<div id="dpad1" class="dpad">
+  <div style="display:flex; flex-direction: column; align-items:center;">
+    <button data-dir="up" data-player="1">▲</button>
+    <div style="display:flex; gap:10px;">
+      <button data-dir="left" data-player="1">◀</button>
+      <button data-dir="right" data-player="1">▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- Player 2 D-Pad -->
+<div id="dpad2" class="dpad">
+  <div style="display:flex; flex-direction: column; align-items:center;">
+    <button data-dir="up" data-player="2">▲</button>
+    <div style="display:flex; gap:10px;">
+      <button data-dir="left" data-player="2">◀</button>
+      <button data-dir="right" data-player="2">▶</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Canvas & UI -->
+<canvas id="gameCanvas"></canvas>
+  <div id="message">Waiting for a player to die, then shows how they die</div>
+  <audio id="bgMusic" loop>
+    <source src="BackOnTrack.mp3" type="audio/mpeg">
+  </audio>
+  <div class="musicControls">
+  <div class="volumeWrapper">
+  <!-- Volume Control FIRST -->
+  <label for="volumeSlider" style="font-size: 12px;">Volume</label>
+  <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" style="width: 120px;">
+  <span id="volumePercentage">100%</span>
+  </div>
+  <!-- Play/Pause SECOND -->
+  <button id="playPauseBtn" onclick="togglePlayPause()">▶️ Play</button>
+
+  <!-- Toggle Music LAST -->
+  <button id="toggleMusicBtn" onclick="playNextTrack()">🔊 Next Track</button>
+</div>
+<script>
+    // Core elements & state
+    const canvas = document.getElementById("gameCanvas"),
+          ctx = canvas.getContext("2d"),
+          menu = document.getElementById("menu"),
+          introScreen = document.getElementById("introScreen"),
+          controlsOverlay = document.getElementById("controlsOverlay"),
+          threePlayerBtn = document.getElementById("threePlayerBtn"),
+          dpad1 = document.getElementById("dpad1"),
+          dpad2 = document.getElementById("dpad2"),
+          bgMusic = document.getElementById("bgMusic"),
+          playPauseBtn = document.getElementById("playPauseBtn"),
+          volumeSlider = document.getElementById("volumeSlider"),
+          volumePercentage = document.getElementById("volumePercentage");
+    // Playlist setup
+const tracks = ["BackOnTrack.mp3","xStep.mp3"];
+let currentTrackIndex = 0;
+bgMusic.src = tracks[currentTrackIndex];
+bgMusic.load();
+function playCurrentTrack() {
+  bgMusic.play().catch(() => {});
+  playPauseBtn.innerText = "⏸ Pause";
+}
+
+function playNextTrack() {
+  currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+  bgMusic.src = tracks[currentTrackIndex];
+  bgMusic.load();
+  playCurrentTrack();
+}
+
+bgMusic.addEventListener("ended", playNextTrack);
+  // Play / Pause toggle
+function togglePlayPause() {
+  if (bgMusic.paused) {
+    bgMusic.play().catch(() => {}); // Play, ignore errors
+    playPauseBtn.innerText = "⏸ Pause";
+  } else {
+    bgMusic.pause();
+    playPauseBtn.innerText = "▶️ Play";
+  }
+}
+// Volume slider
+volumeSlider.addEventListener("input", () => {
+  bgMusic.volume = volumeSlider.value;
+  volumePercentage.innerText = Math.round(volumeSlider.value * 100) + "%";
+});
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    
+    if (isMobile) {
+  document.body.classList.add("mobile");
+} 
+   let numPlayers = 1,
+    gameRunning = false,
+    score = 0,
+    groundBlockCount = 0,
+    highScore = parseInt(localStorage.getItem("highScore")) || 0,
+    blocks = [],
+    winMessage = "";
+
+    const defaultMessage = "Waiting for a player to die, then shows how they die";
+    let messageTimeout;
+
+    // Canvas setup
+     function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+playArea.width = Math.min(500, canvas.width * 0.8);
+playArea.x = (canvas.width - playArea.width) / 2;
+  }
+ let playArea = { x: 0, width: 0 };
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);  
+    const AFK_TIME_LIMIT = 3000,
+          originalPlayAreaWidth = window.innerWidth * 0.9,
+          gravity = 0.4,
+          jumpPower = -8;
+    const players = [
+      { x:100,y:300,w:20,h:20,color:"red",    keyLeft:"a", keyRight:"d", keyJump:"w", alive:false, velocityY:0, lastActive:Date.now() },
+      { x:270,y:300,w:20,h:20,color:"yellow", keyLeft:"j", keyRight:"l", keyJump:"i", alive:false, velocityY:0, lastActive:Date.now() },
+      { x:450,y:300,w:20,h:20,color:"lime",   keyLeft:"ArrowLeft", keyRight:"ArrowRight", keyJump:"ArrowUp", alive:false, velocityY:0, lastActive:Date.now() }
+    ];
+
+    // Music
+    let musicStarted = false;
+    function playMusic() {
+      if (!musicStarted) {
+        bgMusic.volume = 0.5;
+        bgMusic.play().catch(() => {});
+        musicStarted = true;
+      }
+    }
+    function toggleMusic() {
+      bgMusic.paused ? bgMusic.play() : bgMusic.pause();
+    }
+
+    // Controls overlay toggle
+    function toggleControls() {
+      controlsOverlay.style.display =
+        controlsOverlay.style.display === "flex" ? "none" : "flex";
+      controlsOverlay.style.flexDirection = "column";
+    }
+ 
+
+  // ==== NEW: hide intro & device prompt ====
+setTimeout(() => {
+  resizeCanvas();
+  introScreen.style.display = "none";
+  
+  // Checking for mobile based on user agent
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobileDevice) {
+    document.body.classList.add("mobile"); // Add the mobile class for mobile-specific styles
+    threePlayerBtn.style.display = "none";  // Hide the 3 player button on mobile
+    document.querySelector('button[onclick="toggleControls()"]').style.display = "none"; // Hide the show controls button on mobile
+  } else {
+    document.body.classList.remove("mobile"); // Remove the mobile class for desktop
+  }
+  const musicControls = document.querySelector('.musicControls');
+  if (musicControls) {
+  musicControls.style.display = 'flex';
+  musicControls.style.position = 'fixed';
+  musicControls.style.top = '20px';
+  musicControls.style.right = '20px';
+  musicControls.style.bottom = 'auto'; // override any bottom
+  musicControls.style.zIndex = '9999';
+    }
+    // Safely hide/show D-pads
+  const dpads = document.querySelectorAll('.dpad');
+  dpads.forEach(dpad => {
+    dpad.style.display = isMobileDevice ? 'flex' : 'none';
+  });
+  
+  
+  menu.style.display = "flex";
+}, 3000);
+    // ==== END NEW ====
+
+    // Touch state
+    const touchState = {
+      1: { left:false, up:false, right:false },
+      2: { left:false, up:false, right:false }
+    };
+    document.querySelectorAll('.dpad button').forEach(btn => {
+      btn.addEventListener('touchstart', e => {
+        touchState[e.currentTarget.dataset.player][e.currentTarget.dataset.dir] = true;
+        players[parseInt(e.currentTarget.dataset.player) - 1].lastActive = Date.now();
+        e.preventDefault();
+      });
+      btn.addEventListener('touchend', e => {
+        touchState[e.currentTarget.dataset.player][e.currentTarget.dataset.dir] = false;
+        players[parseInt(e.currentTarget.dataset.player) - 1].lastActive = Date.now();
+        e.preventDefault();
+      });
+    });
+    // Start game
+    function startGame(playersCount) {
+      resizeGameCanvas();
+      blocks = [];
+      setupBlockSpawnRate();
+      playMusic();
+      numPlayers = playersCount;
+      winMessage = "";
+      if (numPlayers === 1) { score = 0; groundBlockCount = 0; }
+      players.forEach((pl, i) => {
+       pl.alive = i < numPlayers && (!isMobile || i < 2);
+        if (pl.alive) {
+          pl.x = playArea.x + ((i + 1) * (playArea.width / (numPlayers + 1))) - (pl.w / 2);
+          pl.y = canvas.height - pl.h - 20; pl.velocityY = 0; pl.lastActive = Date.now();
+        }
+      });
+      menu.style.display = "none";
+      canvas.style.display = "block";
+      document.getElementById("message").innerText = "";
+      gameRunning = true;
+      bgMusic.play();  
+      document.getElementById("gameOverUI").style.display = "none";
+      const musicControls = document.querySelector('.musicControls');
+      if (musicControls){
+    musicControls.style.top = "20px";
+    musicControls.style.right = "20px";
+    musicControls.style.bottom = "auto";
+    musicControls.style.display = "flex";
+      } 
+      if (numPlayers > 1) {
+      showMessage(defaultMessage);
+     }
+    } 
+
+    // Block creation
+    function createBlock() {
+      if (!gameRunning) return;
+      const scale = Math.max(0.5, Math.min(1.5, playArea.width / originalPlayAreaWidth));
+      blocks.push({
+        x: Math.random()*(playArea.width-50*scale)+playArea.x,
+        y: -100,
+        width: (60+Math.random()*50)*scale,
+        height: (60+Math.random()*50)*scale,
+        speed: 4+Math.random()*2,
+        color: `hsl(${Math.random()*360},100%,50%)`
+      });
+    }
+
+    // Movement & physics
+    const keys = {};
+    window.addEventListener("keydown", e => {
+      if (!isMobile) {
+        players.forEach(pl => {
+          if (pl.alive &&
+              (e.key===pl.keyLeft||e.key===pl.keyRight||e.key===pl.keyJump)) {
+            pl.lastActive = Date.now();
+          }
+        });
+        if (!gameRunning) {
+          if (e.key.toLowerCase()==='r') resetGameState();
+          if (e.key.toLowerCase()==='m') returnToMenu();
+        }
+      }
+      keys[e.key] = true;
+    });
+    window.addEventListener("keyup", e => {
+      if (!isMobile) keys[e.key] = false;
+    });
+
+    function movePlayers() {
+      players.forEach((pl, i) => {
+        if (!pl.alive) return;
+        const idx = i+1;
+         const groundY = canvas.height - pl.h - 20;
+        if (isMobile && idx<=2) {
+          if (touchState[idx].left  && pl.x>playArea.x)                      pl.x-=7;
+          if (touchState[idx].right && pl.x+pl.w<playArea.x+playArea.width) pl.x+=7;
+          if (touchState[idx].up    && pl.y >= groundY) pl.velocityY = jumpPower;
+          }
+        else if (!isMobile) {
+          if (keys[pl.keyLeft]  && pl.x>playArea.x)                      pl.x-=7;
+          if (keys[pl.keyRight] && pl.x+pl.w<playArea.x+playArea.width) pl.x+=7;
+          if (keys[pl.keyJump] && pl.y >= groundY) pl.velocityY = jumpPower;
+        }
+        pl.velocityY += gravity;
+        pl.y += pl.velocityY;
+        if (pl.y > groundY) {
+         pl.y = groundY;
+        pl.velocityY = 0;
+       }
+      });
+    }
+
+    function moveBlocks() {
+      const rem = [];
+      const blocksNeededForScore = Math.max(5, Math.floor(canvas.width / 500) * 5);
+      blocks.forEach(b => {
+        b.y += b.speed;
+        if (b.y>canvas.height) {
+          if (numPlayers===1) {
+            groundBlockCount++;
+           if (groundBlockCount >= blocksNeededForScore) {
+          score++;
+          groundBlockCount = 0;  // Reset the block count
+        }
+      }
+    } else {
+      rem.push(b);
+    } 
+      });
+      blocks = rem;
+    }
+
+    function checkCollisions() {
+      players.forEach(pl => {
+        if (!pl.alive) return;
+        blocks.forEach(b => {
+          if (pl.x<b.x+b.width && pl.x+pl.w>b.x &&
+              pl.y<b.y+b.height && pl.y+pl.h>b.y) {
+            pl.alive = false;
+            if (numPlayers===1) {
+             saveHighScoreIfNeeded();
+              if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
+}
+              if (isMobile) 
+              document.getElementById("gameOverUI").style.display = "block";
+              gameRunning = false;           
+            } else {
+              showMessage(`${pl.color.toUpperCase()} DIED (BLOCKS)! ☠️`);
+            }
+          }
+        });
+        if (pl.x<=playArea.x||pl.x+pl.w>=playArea.x+playArea.width) {
+          pl.alive = false;
+          if (numPlayers===1) {
+            saveHighScoreIfNeeded();
+            if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
+}
+            if (isMobile) 
+            document.getElementById("gameOverUI").style.display = "block";
+            gameRunning = false;
+          } else {
+            showMessage(`${pl.color.toUpperCase()} DIED (WALL)! ☠️`);
+          }
+        }
+      });
+    }
+
+    function checkAFK() {
+      const now = Date.now();
+      players.forEach(pl => {
+        if (pl.alive && now-pl.lastActive>AFK_TIME_LIMIT) {
+          pl.alive = false;
+          if (numPlayers===1) {
+            saveHighScoreIfNeeded();
+            if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
+}
+            if (isMobile) 
+            document.getElementById("gameOverUI").style.display = "block";
+            gameRunning = false;
+          } else {
+            showMessage(`${pl.color.toUpperCase()} DIED (AFK)! ☠️`);
+          }
+        }
+      });
+    }
+
+    function shrinkWalls() {
+      if (numPlayers > 1) {
+    // Base shrink speed per frame
+    let baseShrink = 0.5;
+    let speedMultiplier = canvas.width / 500; 
+    let shrinkAmount = baseShrink * speedMultiplier;
+    playArea.width = Math.max(200, playArea.width - shrinkAmount);
+     }
+    }
+
+    function checkOnePlayerLeft() {
+      const alive = players.filter(pl => pl.alive);
+      if (numPlayers>1 && alive.length===1 && gameRunning) {
+        gameRunning = false;
+        if (isMobile) {
+  document.getElementById("gameOverText").innerText = `${alive[0].color.toUpperCase()} WON!\nTap a button to continue.`;
+} else {
+  winMessage = `${alive[0].color.toUpperCase()} WON!\nPress R to restart, or M for menu.`;
+}
+
+      if (isMobile) document.getElementById("gameOverUI").style.display = "block";
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle="rgba(255,255,255,0.2)";
+      ctx.fillRect(playArea.x,0,playArea.width,canvas.height);
+     //draw walls
+      const wallWidth = 1;
+  ctx.fillStyle = "white";
+  // Left wall
+  ctx.fillRect(playArea.x, 0, wallWidth, canvas.height);
+  // Right wall
+  ctx.fillRect(playArea.x + playArea.width - wallWidth, 0, wallWidth, canvas.height);
+      // Draw players
+      players.forEach(pl => {
+        if (pl.alive) {
+          ctx.fillStyle = pl.color;
+          ctx.fillRect(pl.x,pl.y,pl.w,pl.h);
+        }
+      });
+     // Draw blocks
+      blocks.forEach(b => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x,b.y,b.width,b.height);
+      });
+      if (numPlayers===1) {
+        ctx.fillStyle="white"; ctx.font="20px Arial"; ctx.textAlign="left";
+        ctx.fillText("Score: "+score,10,30);
+        ctx.fillText("High Score: "+highScore,10,60);
+      }
+      if (winMessage) {
+        ctx.fillStyle="white"; ctx.font="30px Arial"; ctx.textAlign="center";
+        winMessage.split("\n").forEach((line,i)=>{
+          ctx.fillText(line,canvas.width/2,canvas.height/2+i*35);
+        });
+      }
+    }
+
+    function resetGameState() {
+   document.getElementById("gameOverUI").style.display = "none";  
+   startGame(numPlayers);
+}
+
+    function returnToMenu() {
+      canvas.style.display="none";
+      menu.style.display="flex";
+      introScreen.style.display="none";
+    if (isMobile) {
+    document.getElementById("gameOverUI").style.display = "none";
+}
+    }
+    function saveHighScoreIfNeeded() {
+  if (numPlayers === 1 && score > highScore) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+  }
+} 
+    // Game loop & scheduling
+    document.getElementById("restartBtn").addEventListener("click", () => {
+    document.getElementById("gameOverUI").style.display = "none";
+      resetGameState();
+});
+
+document.getElementById("menuBtn").addEventListener("click", () => {
+document.getElementById("gameOverUI").style.display = "none";
+  returnToMenu();
+}); 
+    document.addEventListener("click", playMusic, { once:true });
+    let blockSpawnIntervalId;
+
+function setupBlockSpawnRate() {
+  if (blockSpawnIntervalId) clearInterval(blockSpawnIntervalId);
+
+  const baseInterval = 1000;
+  let blockInterval = baseInterval;
+
+  if (canvas.width > 800) {
+    blockInterval = 500;
+  } 
+  if (canvas.width > 1200) {
+    blockInterval = 300;
+  }
+
+  blockSpawnIntervalId = setInterval(createBlock, blockInterval);
+}
+    window.addEventListener("resize", resizeGameCanvas);
+function resizeGameCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight * 0.93;
+  playArea.width = canvas.width * 0.9;
+  playArea.x = (canvas.width - playArea.width) / 2;
+  setupBlockSpawnRate();
+  repositionPlayers();
+}
+    function repositionPlayers() {
+  players.forEach((pl, i) => {
+    if (pl.alive) {
+      pl.x = playArea.x + ((i + 1) * (playArea.width / (numPlayers + 1))) - (pl.w / 2);
+    }
+  });
+}
+  function showMessage(text, duration = 3000) {
+  clearTimeout(messageTimeout);
+  const msgEl = document.getElementById("message");
+  msgEl.innerText = text;
+
+  // If it's not the default, reset to default after time
+  if (text !== defaultMessage) {
+    messageTimeout = setTimeout(() => {
+      msgEl.innerText = defaultMessage;
+    }, duration);
+  }
+}
+    (function loop(){
+      if(gameRunning){
+        movePlayers();
+        moveBlocks();
+        checkCollisions();
+        checkAFK();
+        shrinkWalls();
+        if(numPlayers>1) checkOnePlayerLeft();
+      }
+      draw();
+      requestAnimationFrame(loop);
+   })();
+</script>
+</body>
+</html>
