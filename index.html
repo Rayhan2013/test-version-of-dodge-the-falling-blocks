@@ -413,7 +413,6 @@ setTimeout(() => {
       resizeGameCanvas();
       blocks = [];
       setupBlockSpawnRate();
-      playMusic();
       numPlayers = playersCount;
       winMessage = "";
       if (numPlayers === 1) { score = 0; groundBlockCount = 0; }
@@ -428,7 +427,9 @@ setTimeout(() => {
       canvas.style.display = "block";
       document.getElementById("message").innerText = "";
       gameRunning = true;
-      bgMusic.play();  
+      if (!bgMusic.paused) {
+      bgMusic.play().catch(() => {});
+      }  
       document.getElementById("gameOverUI").style.display = "none";
       const musicControls = document.querySelector('.musicControls');
       if (musicControls){
