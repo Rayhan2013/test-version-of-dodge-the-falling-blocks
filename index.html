@@ -264,6 +264,7 @@ function playNextTrack() {
   bgMusic.src = tracks[currentTrackIndex];
   bgMusic.load();
   playCurrentTrack();
+  updatePlayPauseButton();
 }
 
 bgMusic.addEventListener("ended", playNextTrack);
@@ -282,14 +283,23 @@ function updatePlayPauseButton() {
   } else {
     bgMusic.pause();
   }
-  updatePlayPauseButton(); // update text immediately
+  updatePlayPauseButton();
 }
 // Volume slider
 volumeSlider.addEventListener("input", () => {
   bgMusic.volume = volumeSlider.value;
   volumePercentage.innerText = Math.round(volumeSlider.value * 100) + "%";
 });
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  //when the user first interacts with the page, start music & update button
+    document.addEventListener("click", () => {
+  if (bgMusic.paused) {
+    bgMusic.play().catch(() => {});
+    updatePlayPauseButton(); // fixes initial state
+  }
+}, { once: true });
+
+  
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     
     if (isMobile) {
