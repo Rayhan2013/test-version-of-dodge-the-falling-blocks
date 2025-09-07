@@ -159,51 +159,6 @@ body.mobile #dpad1, body.mobile #dpad2 {
   position: fixed;    
   bottom: 20px;   /* Both D-Pads will be fixed at the bottom */
 }
- /* Play Menu Container */
-#playMenu {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  padding-top: 100px;
-}
-
-/* Play Menu Title */
-#playMenu h1 {
-  position: absolute;
-  top: 200px;
-  text-align: center;
-}
-
-/* Row for buttons */
-.button-row {
-  display: flex;
-  flex-direction: row;
-  gap: 200px; /* space between buttons */
-  margin-top: 20px;
-}
-
-/* Individual button container */
-.button-container {
-  display: flex;
-  flex-direction: column; /* image above button */
-  align-items: center;
-}
-
-/* Images above buttons */
-.button-container img {
-  width: 80px;        /* adjust as needed */
-  height: 80px;       /* adjust as needed */
-  margin-bottom: 10px; /* space between image and button */
-  pointer-events: none; /* click passes through image */
-}
-
-/* Back button container */
-#playMenu > div:last-child {
-  margin-top: 20px;
-}
- 
   </style>
 </head>
 <body>
@@ -220,42 +175,12 @@ body.mobile #dpad1, body.mobile #dpad2 {
   <button onclick="toggleMusicCredits()">Music Credits</button>
 </div>
 
-  <!-- Play Menu -->
-<div id="playMenu">
+  <!-- New Play Menu -->
+<div id="playMenu" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
   <h1>Play Menu</h1>
-  <div class="button-row">
-    <div class="button-container">
-      <img src="play-online.png" alt="Play Online">
-      <button id="playOnlineBtn">Play Online</button>
-    </div>
-    <div class="button-container">
-      <img src="play-local.png" alt="Play Local">
-      <button id="playLocalBtn">Play Local</button>
-    </div>
-  </div>
-  <div>
-    <button id="backToMenuBtn">Back</button>
-  </div>
-</div>
-
-
-<!-- Mode menu -->
-  <div id="modeMenu" style="
-    display:none; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    height: 100vh; 
-    width: 100vw;
-    position: relative; 
-    top: 0; 
-    left: 0; 
-    z-index: 5;
-    ">
-  <h1>Choose Mode</h1>
-  <button id="instantDeathBtn">Instant Death (Default)</button>
-  <button id="threeLivesBtn">3 Lives</button>
-  <button id="backToPlayMenuFromMode">Back</button>
+  <button id="playOnlineBtn">Play Online</button>
+  <button id="playLocalBtn">Play Local</button>
+  <button id="backToMenuBtn">Back</button>
 </div>
 
   <!-- Choose players -->
@@ -369,12 +294,8 @@ body.mobile #dpad1, body.mobile #dpad2 {
           playLocalBtn = document.getElementById("playLocalBtn"),
           backToMenuBtn = document.getElementById("backToMenuBtn"),
           backToPlayMenuBtn = document.getElementById("backToPlayMenuBtn"),
-          playOnlineOverlay = document.getElementById("playOnlineOverlay"),
-          modeMenu = document.getElementById("modeMenu"),
-          instantDeathBtn = document.getElementById("instantDeathBtn"),
-          threeLivesBtn = document.getElementById("threeLivesBtn"),
-          backToPlayMenuFromMode = document.getElementById("backToPlayMenuFromMode");
-  function togglePlayOnlineOverlay() {
+          playOnlineOverlay = document.getElementById("playOnlineOverlay");
+    function togglePlayOnlineOverlay() {
   if (playOnlineOverlay.style.display === "flex") {
     playOnlineOverlay.style.display = "none";
   } else {
@@ -384,7 +305,7 @@ body.mobile #dpad1, body.mobile #dpad2 {
   // Back button in Choose Players
   backToPlayMenuBtn.addEventListener("click", () => {
   menu.style.display = "none";
-  modeMenu.style.display = "flex";
+  playMenu.style.display = "flex";
   });
     // Back button
 backToMenuBtn.addEventListener("click", () => {
@@ -392,36 +313,13 @@ backToMenuBtn.addEventListener("click", () => {
   mainMenu.style.display = "flex";
 });
 
-// Play local button -> goes to "Choose Mode" menu
+// Play local button -> goes to "Choose Players" menu
 playLocalBtn.addEventListener("click", () => {
   playMenu.style.display = "none";
-  modeMenu.style.display = "flex"; // This is the "Choose Mode" menu
-  document.getElementById("message").innerText = "";
-});
-instantDeathBtn.addEventListener("click", () => {
-  gameMode = "instant";
-  modeMenu.style.display = "none";
-  menu.style.display = "flex"; // go to choose players menu
-  document.getElementById("message").innerText = "";
-  const singlePlayerBtn = menu.querySelector("button[onclick='startGame(1)']");
-  if (singlePlayerBtn) singlePlayerBtn.style.display = "inline-block";
+  menu.style.display = "flex"; // This is the "Choose Players" menu
 });
 
-threeLivesBtn.addEventListener("click", () => {
-  gameMode = "lives";
-  modeMenu.style.display = "none";
-  menu.style.display = "flex"; // go to choose players menu
-  document.getElementById("message").innerText = "";
-// Hide Single Player button
-  const singlePlayerBtn = menu.querySelector("button[onclick='startGame(1)']");
-  if (singlePlayerBtn) singlePlayerBtn.style.display = "none";
-});
- 
-  backToPlayMenuFromMode.addEventListener("click", () => {
-  modeMenu.style.display = "none";
-  playMenu.style.display = "flex"; // back one step
-});
-  // Play online button -> not implemented yet
+// Play online button -> not implemented yet
 playOnlineBtn.addEventListener("click", () => {
   togglePlayOnlineOverlay();
 });
@@ -500,9 +398,7 @@ volumeSlider.addEventListener("input", () => {
     groundBlockCount = 0,
     highScore = parseInt(localStorage.getItem("highScore")) || 0,
     blocks = [],
-    winMessage = "",
-    maxLives = 1,
-    gameMode = "instant";
+    winMessage = "";
 
     const defaultMessage = "Waiting for a player to die, then shows how they die";
     let messageTimeout;
@@ -612,14 +508,8 @@ setTimeout(() => {
         if (pl.alive) {
           pl.x = playArea.x + ((i + 1) * (playArea.width / (numPlayers + 1))) - (pl.w / 2);
           pl.y = canvas.height - pl.h - 20; pl.velocityY = 0; pl.lastActive = Date.now();
-     // Reset lives properly
-    if (gameMode === "instant") {
-      delete pl.lives;  // remove lives property
-    } else if (gameMode === "lives") {
-      pl.lives = 3;     // always reset to 3 lives
-    } 
-  }
-});
+        }
+      });
       menu.style.display = "none";
       canvas.style.display = "block";
       document.getElementById("message").innerText = "";
@@ -653,16 +543,8 @@ setTimeout(() => {
         color: `hsl(${Math.random()*360},100%,50%)`
       });
     }
-function hitPlayer(player) {
-  if (player.lives > 1) {
-    player.lives--;
-    showMessage(`${player.name} got hit! Lives left: ${player.lives}`);
-  } else {
-    player.dead = true;
-    showMessage(`${player.name} is out!`);
-  }
-}
-   // Movement & physics
+
+    // Movement & physics
     const keys = {};
     window.addEventListener("keydown", e => {
       if (!isMobile) {
@@ -704,10 +586,6 @@ function hitPlayer(player) {
          pl.y = groundY;
         pl.velocityY = 0;
        }
-    if (gameMode === "lives") {
-      if (pl.x < playArea.x) pl.x = playArea.x;
-      if (pl.x + pl.w > playArea.x + playArea.width) pl.x = playArea.x + playArea.width - pl.w;
-    }
       });
     }
 
@@ -732,110 +610,67 @@ function hitPlayer(player) {
     }
 
     function checkCollisions() {
-  const now = Date.now();
-
-  players.forEach(pl => {
-    if (!pl.alive) return;
-
-    blocks.forEach(b => {
-      if (pl.x < b.x + b.width && pl.x + pl.w > b.x &&
-          pl.y < b.y + b.height && pl.y + pl.h > b.y) {
-
-        if (gameMode === "lives" && pl.lives !== undefined) {
-          if (!pl.lastHitTime || now - pl.lastHitTime >= 500) {
-            pl.lives -= 1;
-            pl.lastHitTime = now;
-
-            if (pl.lives <= 0) {
-              pl.alive = false;
-              if (numPlayers === 1) handleGameOver();
-              else showMessage(`${pl.color.toUpperCase()} DIED (BLOCKS)! ☠️`);
+      players.forEach(pl => {
+        if (!pl.alive) return;
+        blocks.forEach(b => {
+          if (pl.x<b.x+b.width && pl.x+pl.w>b.x &&
+              pl.y<b.y+b.height && pl.y+pl.h>b.y) {
+            pl.alive = false;
+            if (numPlayers===1) {
+             saveHighScoreIfNeeded();
+              if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
+}
+              if (isMobile) 
+              document.getElementById("gameOverUI").style.display = "block";
+              gameRunning = false;           
             } else {
-              showMessage(`${pl.color.toUpperCase()} HIT! Lives left: ${pl.lives}`);
+              showMessage(`${pl.color.toUpperCase()} DIED (BLOCKS)! ☠️`);
             }
           }
-        } else {
-          // Instant death mode
+        });
+        if (pl.x<=playArea.x||pl.x+pl.w>=playArea.x+playArea.width) {
           pl.alive = false;
-          if (numPlayers === 1) handleGameOver();
-          else showMessage(`${pl.color.toUpperCase()} DIED (BLOCKS)! ☠️`);
-        }
-      }
-    });
-    if (pl.x < playArea.x) {
-      pl.x = playArea.x;
-    }
-    if (pl.x + pl.w > playArea.x + playArea.width) {
-      pl.x = playArea.x + playArea.width - pl.w;
-    }
-    // Wall collisions
-    if (pl.x <= playArea.x || pl.x + pl.w >= playArea.x + playArea.width) {
-      if (gameMode === "lives" && pl.lives !== undefined) {
-        if (!pl.lastHitTime || now - pl.lastHitTime >= 500) {
-          pl.lives -= 1;
-          pl.lastHitTime = now;
-
-          if (pl.lives <= 0) {
-            pl.alive = false;
-            if (numPlayers === 1) handleGameOver();
-            else showMessage(`${pl.color.toUpperCase()} DIED (WALL)! ☠️`);
+          if (numPlayers===1) {
+            saveHighScoreIfNeeded();
+            if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
+}
+            if (isMobile) 
+            document.getElementById("gameOverUI").style.display = "block";
+            gameRunning = false;
           } else {
-            showMessage(`${pl.color.toUpperCase()} HIT! Lives left: ${pl.lives}`);
+            showMessage(`${pl.color.toUpperCase()} DIED (WALL)! ☠️`);
           }
         }
-      } else {
-        pl.alive = false;
-        if (numPlayers === 1) handleGameOver();
-        else showMessage(`${pl.color.toUpperCase()} DIED (WALL)! ☠️`);
-      }
+      });
     }
-
-  });
-}
-
-
-function handleGameOver() {
-  saveHighScoreIfNeeded();
-  if (isMobile) {
-    document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
-    document.getElementById("gameOverUI").style.display = "block";
-  } else {
-    winMessage = "GAME OVER\nPress R to restart, or M for menu.";
-  }
-  gameRunning = false;
-}
-
 
     function checkAFK() {
-  const now = Date.now();
-  players.forEach(pl => {
-    if (!pl.alive) return;
-    if (pl.lastHitTime && now - pl.lastHitTime < 500) return;
-
-    if (now - pl.lastActive > AFK_TIME_LIMIT) {
-
-      if (gameMode === "lives" && pl.lives !== undefined) { // 3-lives mode
-        pl.lives -= 1;
-        pl.lastHitTime = now;
-
-        if (pl.lives <= 0) {
+      const now = Date.now();
+      players.forEach(pl => {
+        if (pl.alive && now-pl.lastActive>AFK_TIME_LIMIT) {
           pl.alive = false;
-          if (numPlayers === 1) handleGameOver();
-          else showMessage(`${pl.color.toUpperCase()} DIED (AFK)! ☠️`);
-        } else {
-          showMessage(`${pl.color.toUpperCase()} AFK! Lives left: ${pl.lives}`);
-        }
-      } else { 
-        // Instant death mode
-        pl.alive = false;
-        if (numPlayers === 1) handleGameOver();
-        else showMessage(`${pl.color.toUpperCase()} DIED (AFK)! ☠️`);
-      }
-
-      pl.lastActive = now; // reset AFK timer so it doesn't subtract again immediately
-    }
-  });
+          if (numPlayers===1) {
+            saveHighScoreIfNeeded();
+            if (isMobile) {
+  document.getElementById("gameOverText").innerText = "Game Over!\nTap a button to continue.";
+} else {
+  winMessage = "GAME OVER\nPress R to restart, or M for menu.";
 }
+            if (isMobile) 
+            document.getElementById("gameOverUI").style.display = "block";
+            gameRunning = false;
+          } else {
+            showMessage(`${pl.color.toUpperCase()} DIED (AFK)! ☠️`);
+          }
+        }
+      });
+    }
 
     function shrinkWalls() {
       if (numPlayers > 1) {
@@ -879,7 +714,7 @@ function handleGameOver() {
           ctx.fillRect(pl.x,pl.y,pl.w,pl.h);
         }
       });
-      // Draw blocks
+     // Draw blocks
       blocks.forEach(b => {
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x,b.y,b.width,b.height);
@@ -889,16 +724,6 @@ function handleGameOver() {
         ctx.fillText("Score: "+score,10,30);
         ctx.fillText("High Score: "+highScore,10,60);
       }
-   if (numPlayers > 1 && gameMode === "lives") {
-    ctx.font = "20px Arial";
-    ctx.textAlign = "left";
-    players.forEach((pl, index) => {
-      if (pl.lives !== undefined) {   // Only show if lives exist
-        ctx.fillStyle = pl.color;
-        ctx.fillText(pl.color.toUpperCase() + " Lives: " + pl.lives, 10, 30 + index * 30);
-      }
-    });
-  }
       if (winMessage) {
         ctx.fillStyle="white"; ctx.font="30px Arial"; ctx.textAlign="center";
         winMessage.split("\n").forEach((line,i)=>{
